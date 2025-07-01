@@ -40,7 +40,7 @@ This will launch a web UI in your browser where you can chat with the cricket as
 
 > **Tip:** The chat UI supports conversation memory and rich responses.
 
-![Demo Screenshot](demo_screenshot.png)
+![Demo Screenshot](demo.png)
 
 ## Usage
 
