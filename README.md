@@ -135,9 +135,17 @@ The server includes comprehensive error handling for:
 - Missing data on Cricbuzz
 - Search failures
 
+## MCP Directory Badge
+
+Add this badge to your README to show your server is listed and safe:
+
+<a href="https://glama.ai/mcp/servers/@tarun7r/cricket-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@tarun7r/cricket-mcp-server/badge" />
+</a>
+
 ## License
 
-This project is for educational and personal use. Please respect the terms of service of the data sources.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
