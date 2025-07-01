@@ -25,9 +25,7 @@ pip install -r requirements.txt
 The server can be integrated with MCP clients. Here's how to configure it:
 
 ```python
-from mcp import MultiServerMCPClient
 
-client = MultiServerMCPClient(
     {
         "cricket": {
             "command": "python",
@@ -35,7 +33,6 @@ client = MultiServerMCPClient(
             "transport": "stdio",
         }
     }
-)
 ```
 
 For a more flexible setup, you can use environment variables to define the python executable and server script path.
