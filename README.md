@@ -18,6 +18,30 @@ A Model Context Protocol (MCP) server that provides comprehensive cricket data f
 pip install -r requirements.txt
 ```
 
+## Demo: Gradio Web UI
+
+You can interact with the Cricket MCP Server using a conversational web interface powered by Gradio and Gemini.
+
+### 1. Set your Gemini API key
+
+You need a Google Gemini API key to use the conversational agent. Set it as an environment variable:
+
+```bash
+export GOOGLE_API_KEY="your-gemini-api-key"
+```
+
+### 2. Run the Gradio demo
+
+```bash
+python cricket_gradio.py
+```
+
+This will launch a web UI in your browser where you can chat with the cricket assistant, ask for stats, live matches, news, and more.
+
+> **Tip:** The chat UI supports conversation memory and rich responses.
+
+![Demo Screenshot](demo_screenshot.png)
+
 ## Usage
 
 ### Running as an MCP Server
