@@ -1,0 +1,5 @@
+fastmcp>=0.1.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+googlesearch-python>=1.2.0
