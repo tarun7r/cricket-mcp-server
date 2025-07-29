@@ -8,7 +8,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import InMemorySaver
 
 # Set your Gemini API key
-os.environ["GOOGLE_API_KEY"] = "YOUR_GOOGLE_API_KEY_HERE"  # Replace with your actual API key
+os.environ["GOOGLE_API_KEY"] = "YOUR_API_KEY"  # Replace with your actual API key
 
 class AgentManager:
     """
@@ -64,7 +64,7 @@ class CricketAgent:
             {
                 "cricket": {
                     "command": "python",
-                    "args": ["/Users/tarun.goddu/Desktop/jio pocs/cricket/server.py"],
+                    "args": ["cricket_server.py"],
                     "transport": "stdio",
                 }
             }
@@ -161,7 +161,7 @@ def create_interface():
             <div class="cricket-header">
                 <h1>🏏 Cricket Statistics Assistant</h1>
                 <p style=\"font-size: 18px; margin-top: 10px;\">
-                    Your AI-powered cricket companion with conversation memory!
+                    Your AI-powered cricket companion!
                 </p>
             </div>
         """)
@@ -203,6 +203,8 @@ def create_interface():
                             <li>Format comparisons</li>
                             <li>Historical cricket data</li>
                             <li>Latest cricket news</li>
+                            <li>ICC rankings (batting, bowling, all-rounders, teams)</li>
+                            <li>Match scorecards & detailed analysis</li>
                         </ul>
                     </div>
                 """)
@@ -213,14 +215,16 @@ def create_interface():
             with gr.Column():
                 gr.Examples(
                     examples=[
-                        "How many hundreds does Virat Kohli have in Test, ODI, and T20 cricket?",
-                        "What is the highest score of Rohit Sharma?",
-                        "Show me MS Dhoni's career stats",
                         "Compare Virat Kohli and Steve Smith's Test careers",
-                        "Get current live cricket matches",
                         "Tell me about Jasprit Bumrah's bowling statistics",
+                        "How many hundreds does Virat Kohli have in Test, ODI, and T20 cricket?",
+                        "Get current live cricket matches",
                         "What's the upcoming international cricket schedule?",
-                        "Get the latest cricket news"
+                        "Get the latest cricket news",
+                        "Who are the top 10 ODI batsmen?",
+                        "Show me the ICC Test bowling rankings",
+                        "What are the T20 team rankings?",
+                        "Get detailed scorecard for a recent match"
                     ],
                     inputs=msg_input,
                     label="💡 Try these example questions (notice how some refer to previous context):"

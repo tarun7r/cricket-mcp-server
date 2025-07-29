@@ -8,6 +8,8 @@ A Model Context Protocol (MCP) server that provides comprehensive cricket data f
 - **Live Matches**: Fetch currently ongoing cricket matches
 - **Match Schedule**: Get upcoming cricket match schedules
 - **Cricket News**: Latest cricket news and updates
+- **ICC Rankings**: Official ICC rankings for batting, bowling, all-rounders, and teams across Test, ODI, and T20 formats
+- **Match Scorecards**: Detailed match analysis with batting and bowling statistics
 
 ## Installation
 
@@ -33,7 +35,7 @@ export GOOGLE_API_KEY="your-gemini-api-key"
 ### 2. Run the Gradio demo
 
 ```bash
-python cricket_gradio.py
+python3 cricket_gradio.py
 ```
 
 This will launch a web UI in your browser where you can chat with the cricket assistant, ask for stats, live matches, news, and more.
@@ -52,7 +54,7 @@ The server can be integrated with MCP clients. Here's how to configure it:
 
     {
         "cricket": {
-            "command": "python",
+            "command": "python3",
             "args": ["cricket_server.py"],
             "transport": "stdio",
         }
@@ -66,7 +68,7 @@ For a more flexible setup, you can use environment variables to define the pytho
 For testing purposes, you can run the server directly:
 
 ```bash
-python cricket_server.py
+python3 cricket_server.py
 ```
 
 ## Available Tools
@@ -110,6 +112,36 @@ Get the latest cricket news.
 
 **Returns:**
 List of cricket news articles with headlines, descriptions, timestamps, and categories.
+
+### 5. get_icc_rankings
+Get official ICC cricket rankings for various categories.
+
+**Parameters:**
+- `category` (str): The ranking category. Must be one of: "batting", "bowling", "all-rounder", or "teams".
+
+**Returns:**
+Dictionary with rankings for Test, ODI, and T20 formats. Each format contains a list of players or teams with their position, name, country, and rating.
+
+**Example:**
+```python
+# Get batting rankings
+batting_rankings = get_icc_rankings("batting")
+
+# Get bowling rankings
+bowling_rankings = get_icc_rankings("bowling")
+
+# Get team rankings
+team_rankings = get_icc_rankings("teams")
+```
+
+### 6. get_match_details
+Get detailed scorecard for a specific cricket match.
+
+**Parameters:**
+- `match_url` (str): The URL of the match on Cricbuzz (can be obtained from get_live_matches).
+
+**Returns:**
+Dictionary containing match details including match title, result, and detailed scorecard for each innings with batting and bowling statistics.
 
 ## Data Source
 
