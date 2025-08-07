@@ -532,8 +532,238 @@ def get_icc_rankings(category: str) -> dict:
         return {"error": f"An error occurred: {str(e)}"}
 
 
+@mcp.tool()
+def get_live_commentary(match_url: str, limit: int = 20) -> dict:
+    """
+    Get recent live commentary events for a Cricbuzz match.
+
+    Args:
+        match_url (str): Cricbuzz match URL. Can be a general match page; the commentary tab will be resolved automatically.
+        limit (int): Maximum number of recent commentary items to return.
+
+    Returns:
+        dict: {"title": str, "commentary_url": str, "events": [{"text": str}]}
+    """
+    if not match_url or "cricbuzz.com" not in match_url:
+        return {"error": "A valid Cricbuzz match URL is required."}
+
+    # Try official JSON commentary API first (more reliable than HTML scraping)
+    match_id_match = re.search(r"/(\d{5,7})/", match_url)
+    if not match_id_match:
+        return {"error": "Could not extract match id from URL."}
+    match_id = match_id_match.group(1)
+
+    api_url = f"https://www.cricbuzz.com/api/cricket-match/commentary/{match_id}"
+    try:
+        resp = requests.get(api_url, headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        data = None
+
+    def _clean_comm_text(text: str) -> str:
+        # Remove formatting markers like "B0$", "I0$" etc.
+        t = re.sub(r"[A-Z]\d\$", "", text)
+        # Normalize whitespace
+        t = re.sub(r"\s+", " ", t).strip()
+        return t
+
+    if isinstance(data, dict) and data.get("commentaryList"):
+        header = data.get("matchHeader", {})
+        miniscore = data.get("miniscore", {})
+        title_parts = []
+        if header.get("matchDescription"):
+            title_parts.append(header.get("matchDescription"))
+        if header.get("status"):
+            title_parts.append(header.get("status"))
+        title = " - ".join(title_parts) if title_parts else None
+
+        events = []
+        for item in data.get("commentaryList", [])[: max(0, limit)]:
+            text = _clean_comm_text(str(item.get("commText", "")).strip())
+            if not text:
+                continue
+            ev = {"text": text}
+            if item.get("event"):
+                ev["event"] = item.get("event")
+            if item.get("ballNbr") is not None:
+                ev["ball"] = item.get("ballNbr")
+            events.append(ev)
+
+        return {
+            "title": title,
+            "commentary_url": match_url,
+            "events": events,
+        }
+
+    # If JSON API fails, fall back to HTML scraping heuristics
+    def _fetch(url: str) -> BeautifulSoup | None:
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=15)
+            resp.raise_for_status()
+            return BeautifulSoup(resp.text, "lxml")
+        except Exception:
+            return None
+
+    page = _fetch(match_url)
+    if not page:
+        return {"error": "Failed to load match page. The match might not be live or the URL may be incorrect."}
+
+    commentary_url = None
+    try:
+        nav = page.find("div", class_=re.compile("cb-nav-pills"))
+        if nav:
+            for a in nav.find_all("a", href=True):
+                if "commentary" in a.get("href", "").lower() or (a.text and "commentary" in a.text.lower()):
+                    commentary_url = ("https://www.cricbuzz.com" + a["href"]) if a["href"].startswith("/") else a["href"]
+                    break
+    except Exception:
+        pass
+
+    if not commentary_url:
+        commentary_url = match_url.rstrip("/") + "/commentary"
+
+    cpage = _fetch(commentary_url)
+    if not cpage:
+        return {"error": "Failed to load commentary page. This match may not have live commentary available."}
+
+    result: dict = {"title": None, "commentary_url": commentary_url, "events": []}
+    title_tag = cpage.find("h1", class_=re.compile("cb-nav-hdr"))
+    if title_tag:
+        result["title"] = title_tag.text.strip()
+
+    candidates = []
+    candidates.extend(cpage.find_all("div", class_=re.compile(r"cb-col\s+cb-col-90\s+cb-com-ln")))
+    if not candidates:
+        lst = cpage.find("div", class_=re.compile("cb-com-lst"))
+        if lst:
+            candidates.extend(lst.find_all("div", class_=re.compile(r"cb-col\s+cb-col-90")))
+    if not candidates:
+        candidates.extend(cpage.find_all("p", class_=re.compile("cb-com-ln")))
+    if not candidates:
+        candidates.extend(cpage.find_all("div", class_=re.compile("cb-com-ln")))
+    if not candidates:
+        for div in cpage.find_all("div"):
+            text = div.get_text(" ", strip=True)
+            if text and len(text) > 20 and ("ball" in text.lower() or "over" in text.lower() or "wicket" in text.lower()):
+                candidates.append(div)
+
+    events = []
+    for node in candidates:
+        try:
+            text = node.get_text(" ", strip=True)
+            if not text:
+                continue
+            if text.lower().startswith("commentary"):
+                continue
+            if len(text) < 10:
+                continue
+            events.append({"text": text})
+            if len(events) >= limit:
+                break
+        except Exception:
+            continue
+
+    result["events"] = events
+    if not events:
+        result["note"] = "No commentary items found. This match may not be live or commentary may not be available."
+        try:
+            match_info = get_match_details(match_url)
+            if "error" not in match_info:
+                result["fallback"] = "Commentary not available, but here's the match details:"
+                result["match_details"] = match_info
+        except Exception:
+            pass
+
+    return result
+
+
+@mcp.tool()
+def web_search(query: str, num_results: int = 5, site_filter: str | None = None) -> list:
+    """
+    General web search for cricket-related queries. Returns links with titles and snippets.
+
+    Args:
+        query (str): Search query
+        num_results (int): Number of results to return (max ~10 typical)
+        site_filter (str, optional): If provided, prefixes the query with e.g. "site:cricbuzz.com"
+
+    Returns:
+        list[dict]: [{"title": str, "url": str, "snippet": str}]
+    """
+    if not query:
+        return [{"error": "query is required"}]
+
+    q = query.strip()
+    if site_filter:
+        q = f"site:{site_filter} " + q
+
+    results = []
+    try:
+        links = search(q, num_results=max(1, min(num_results, 10)))
+    except Exception as e:
+        return [{"error": f"Search failed: {str(e)}"}]
+
+    for url in links:
+        item = {"url": url}
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=8)
+            resp.raise_for_status()
+            page = BeautifulSoup(resp.text, "lxml")
+            title = page.find("title")
+            desc = page.find("meta", attrs={"name": "description"})
+            item["title"] = title.text.strip() if title and title.text else url
+            item["snippet"] = desc["content"].strip() if desc and desc.get("content") else ""
+        except Exception:
+            item["title"] = url
+            item["snippet"] = ""
+        results.append(item)
+
+    return results
+
+
+@mcp.tool()
+def search_live_commentary(match_description: str = None, team1: str = None, team2: str = None) -> list:
+    """
+    Search for live commentary and updates for cricket matches on the web.
+    
+    Args:
+        match_description (str, optional): Full match description (e.g., "Zimbabwe vs New Zealand 2nd Test")
+        team1 (str, optional): First team name
+        team2 (str, optional): Second team name
+        
+    Returns:
+        list: Web search results for live commentary and match updates
+    """
+    if not match_description and not (team1 and team2):
+        return [{"error": "Please provide either match_description or both team1 and team2"}]
+    
+    # Build search query
+    if match_description:
+        query = f"live commentary {match_description} cricket"
+    else:
+        query = f"live commentary {team1} vs {team2} cricket"
+    
+    # Search with cricket news sites
+    results = []
+    
+    # Try Cricbuzz
+    cricbuzz_results = web_search(query, num_results=3, site_filter="cricbuzz.com")
+    if cricbuzz_results and "error" not in cricbuzz_results[0]:
+        results.extend(cricbuzz_results)
+    
+    # Try ESPN Cricinfo
+    espn_results = web_search(query, num_results=3, site_filter="espncricinfo.com")
+    if espn_results and "error" not in espn_results[0]:
+        results.extend(espn_results)
+    
+    # General search
+    general_results = web_search(query, num_results=5)
+    if general_results and "error" not in general_results[0]:
+        results.extend(general_results)
+    
+    return results[:10]  # Limit to 10 results
+
+
 if __name__ == "__main__":
-    # test the icc rankings
-    rankings = get_icc_rankings("batting")
-    print(json.dumps(rankings, indent=2))
     mcp.run(transport="stdio")

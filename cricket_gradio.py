@@ -6,9 +6,11 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import InMemorySaver
+from dotenv import load_dotenv
+load_dotenv()
 
 # Set your Gemini API key
-os.environ["GOOGLE_API_KEY"] = "YOUR_API_KEY"  # Replace with your actual API key
+google_api_key = os.getenv("GOOGLE_API_KEY")
 
 class AgentManager:
     """
@@ -74,7 +76,7 @@ class CricketAgent:
         # Create the Gemini model
         model = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
-            google_api_key=os.environ["GOOGLE_API_KEY"]
+            google_api_key=google_api_key
         )
         
         # Create agent with memory
@@ -199,12 +201,14 @@ def create_interface():
                             <li>Batting & bowling averages</li>
                             <li>Career highlights</li>
                             <li>Live match updates</li>
+                            <li>Live commentary (paste a match URL)</li>
                             <li>Upcoming schedules</li>
                             <li>Format comparisons</li>
                             <li>Historical cricket data</li>
                             <li>Latest cricket news</li>
                             <li>ICC rankings (batting, bowling, all-rounders, teams)</li>
                             <li>Match scorecards & detailed analysis</li>
+                            <li>General web search for cricket info</li>
                         </ul>
                     </div>
                 """)
@@ -224,7 +228,9 @@ def create_interface():
                         "Who are the top 10 ODI batsmen?",
                         "Show me the ICC Test bowling rankings",
                         "What are the T20 team rankings?",
-                        "Get detailed scorecard for a recent match"
+                        "Get detailed scorecard for a recent match",
+                        "Search web for latest update on Rohit Sharma injury",
+                        "Search for live commentary of Zimbabwe vs New Zealand 2nd Test"
                     ],
                     inputs=msg_input,
                     label="💡 Try these example questions (notice how some refer to previous context):"

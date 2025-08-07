@@ -10,6 +10,8 @@ A Model Context Protocol (MCP) server that provides comprehensive cricket data f
 - **Cricket News**: Latest cricket news and updates
 - **ICC Rankings**: Official ICC rankings for batting, bowling, all-rounders, and teams across Test, ODI, and T20 formats
 - **Match Scorecards**: Detailed match analysis with batting and bowling statistics
+- **Live Commentary**: Recent ball-by-ball updates for a given match URL
+- **Web Search**: Internet search with titles/snippets for cricket topics
 
 ## Installation
 
@@ -142,6 +144,52 @@ Get detailed scorecard for a specific cricket match.
 
 **Returns:**
 Dictionary containing match details including match title, result, and detailed scorecard for each innings with batting and bowling statistics.
+
+### 7. get_live_commentary
+Get recent live commentary for a specific cricket match.
+
+**Parameters:**
+- `match_url` (str): Cricbuzz match page URL (general match or direct commentary tab)
+- `limit` (int, optional): Max number of recent items to return (default 20)
+
+**Returns:**
+Dictionary containing `title`, `commentary_url`, and `events` (list of commentary lines).
+
+**Example:**
+```python
+commentary = get_live_commentary("https://www.cricbuzz.com/live-cricket-scorecard/12345")
+```
+
+### 8. web_search
+Search the web and return results with titles and snippets.
+
+**Parameters:**
+- `query` (str): Search query
+- `num_results` (int, optional): Number of results (default 5)
+- `site_filter` (str, optional): Restrict to a domain like `cricbuzz.com`
+
+**Returns:**
+List of results: `{ "title": str, "url": str, "snippet": str }`.
+
+### 9. search_live_commentary
+Search for live commentary and updates for cricket matches on the web.
+
+**Parameters:**
+- `match_description` (str, optional): Full match description (e.g., "Zimbabwe vs New Zealand 2nd Test")
+- `team1` (str, optional): First team name
+- `team2` (str, optional): Second team name
+
+**Returns:**
+List of web search results for live commentary and match updates from cricket news sites.
+
+**Example:**
+```python
+# Search by match description
+results = search_live_commentary(match_description="Zimbabwe vs New Zealand 2nd Test")
+
+# Search by team names
+results = search_live_commentary(team1="Zimbabwe", team2="New Zealand")
+```
 
 ## Data Source
 
